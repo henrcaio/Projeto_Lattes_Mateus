@@ -65,3 +65,9 @@ if resultados_busca:
         print(curriculo)
 else:
     print(f"Nenhum currículo encontrado com a palavra '{palavra_chave}'.")
+
+
+# Criar formatação para formação, projetos e produções
+# se chave tem valor nulo, não precisa aparecer
+# definir chaves que não precisam aparecer
+# definir novos nomes pras chaves (tirar o @)
