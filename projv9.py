@@ -10,30 +10,56 @@ def extrair_informacoes(xml_file):
     # Extraindo campos do XML
     nome = data["CURRICULO-VITAE"]["DADOS-GERAIS"]["@NOME-COMPLETO"]
     lattes_id = data["CURRICULO-VITAE"]["@NUMERO-IDENTIFICADOR"]
-    resumo = data["CURRICULO-VITAE"]["DADOS-GERAIS"]["RESUMO-CV"]["@TEXTO-RESUMO-CV-RH"]
-    projetos = data["CURRICULO-VITAE"]["PRODUCAO-BIBLIOGRAFICA"]
+    resumo = (
+        data["CURRICULO-VITAE"]["DADOS-GERAIS"]
+        .get("RESUMO-CV", {})
+        .get("@TEXTO-RESUMO-CV-RH", "Resumo não disponível.")
+    )
 
     # Extraindo formação acadêmica
     formacao = []
-    for nivel in ["GRADUACAO", "MESTRADO", "DOUTORADO", "POS-DOUTORADO"]:
-        if (
-            nivel
-            in data["CURRICULO-VITAE"]["DADOS-GERAIS"]["FORMACAO-ACADEMICA-TITULACAO"]
-        ):
-            formacoes_nivel = data["CURRICULO-VITAE"]["DADOS-GERAIS"][
-                "FORMACAO-ACADEMICA-TITULACAO"
-            ][nivel]
-            if isinstance(formacoes_nivel, list):
-                formacao.extend(formacoes_nivel)
-            else:
-                formacao.append(formacoes_nivel)
+    if "FORMACAO-ACADEMICA-TITULACAO" in data["CURRICULO-VITAE"]["DADOS-GERAIS"]:
+        for nivel in ["GRADUACAO", "MESTRADO", "DOUTORADO", "POS-DOUTORADO"]:
+            if (
+                nivel
+                in data["CURRICULO-VITAE"]["DADOS-GERAIS"][
+                    "FORMACAO-ACADEMICA-TITULACAO"
+                ]
+            ):
+                formacoes_nivel = data["CURRICULO-VITAE"]["DADOS-GERAIS"][
+                    "FORMACAO-ACADEMICA-TITULACAO"
+                ][nivel]
+                if isinstance(formacoes_nivel, list):
+                    formacao.extend(formacoes_nivel)
+                else:
+                    formacao.append(formacoes_nivel)
+
+    # Extraindo produção bibliográfica
+    producao_bibliografica = {}
+    if "PRODUCAO-BIBLIOGRAFICA" in data["CURRICULO-VITAE"]:
+        producao_bibliografica = data["CURRICULO-VITAE"]["PRODUCAO-BIBLIOGRAFICA"]
+
+    # Extração detalhada das subcategorias de produção bibliográfica
+    trabalhos_eventos = producao_bibliografica.get("TRABALHOS-EM-EVENTOS", {}).get(
+        "TRABALHO-EM-EVENTOS", []
+    )
+    artigos_publicados = producao_bibliografica.get("ARTIGOS-PUBLICADOS", {}).get(
+        "ARTIGO-PUBLICADO", []
+    )
+    livros_capitulos = producao_bibliografica.get("LIVROS-E-CAPITULOS", {}).get(
+        "LIVRO-PUBLICADO-OU-ORGANIZADO", []
+    )
 
     return {
         "NOME-COMPLETO": nome,
         "NUMERO-IDENTIFICADOR": lattes_id,
         "TEXTO-RESUMO-CV-RH": resumo,
         "FORMACAO-ACADEMICA": formacao,
-        "PRODUCAO-BIBLIOGRAFICA": projetos,
+        "PRODUCAO-BIBLIOGRAFICA": {
+            "TRABALHOS EM EVENTOS": trabalhos_eventos,
+            "ARTIGOS PUBLICADOS": artigos_publicados,
+            "LIVROS E CAPITULOS": livros_capitulos,
+        },
     }
 
 
@@ -59,32 +85,31 @@ def buscar_por_palavra(dados_curriculos, palavra):
     return resultados
 
 
-# Função para formatar o texto com base nas chaves selecionadas
+# Função para formatar o texto com base nas chaves selecionadas, separando grandes tópicos
 def formatar_saida(dados, chaves_selecionadas):
-    if isinstance(dados, dict):  # Se for um dicionário, iterar pelos itens
+    if isinstance(dados, dict):
         for key, value in dados.items():
             key_sem_prefixo = key.replace("@", "").replace("-", " ").upper()
 
             # Exibe apenas se a chave estiver na lista de chaves selecionadas
             if key_sem_prefixo in chaves_selecionadas:
-                if isinstance(
-                    value, dict
-                ):  # Se o valor for um dicionário, chamar recursivamente
+                if isinstance(value, dict):
                     print(f"{key_sem_prefixo}:")
                     formatar_saida(value, chaves_selecionadas)
-                elif isinstance(
-                    value, list
-                ):  # Se o valor for uma lista, iterar pelos elementos
+                elif isinstance(value, list):
                     print(f"{key_sem_prefixo}:")
                     for item in value:
-                        formatar_saida(
-                            item, chaves_selecionadas
-                        )  # Chamar recursivamente para cada item da lista
+                        formatar_saida(item, chaves_selecionadas)
                 elif value:  # Exibe apenas se o valor não for nulo
                     print(f"{key_sem_prefixo}: {value}")
-    elif isinstance(dados, list):  # Caso seja uma lista na raiz
-        for item in dados:
-            formatar_saida(item, chaves_selecionadas)
+
+                # Adiciona uma linha em branco apenas entre grandes seções
+                if key_sem_prefixo in [
+                    "TEXTO RESUMO CV RH",
+                    "FORMACAO ACADEMICA",
+                    "PRODUCAO BIBLIOGRAFICA",
+                ]:
+                    print("\n")
 
 
 # Lista de chaves que queremos exibir
@@ -101,8 +126,15 @@ chaves_selecionadas = {
     "NOME CURSO",
     "STATUS DO CURSO",
     "PRODUCAO BIBLIOGRAFICA",
+    "TRABALHOS EM EVENTOS",
     "TITULO DO TRABALHO",
+    "ANO DO TRABALHO",
+    "ARTIGOS PUBLICADOS",
+    "TITULO DO ARTIGO",
+    "ANO DO ARTIGO",
+    "LIVROS E CAPITULOS",
 }
+
 
 # Diretório onde os arquivos XML estão localizados
 diretorio = "C:\\Users\\henrc\\Desktop\\Proj_Mat"
