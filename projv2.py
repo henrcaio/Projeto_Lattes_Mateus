@@ -338,6 +338,10 @@ def formatar_livros_e_capitulos(dados):
         livros = livros_e_capitulos.get("LIVRO-PUBLICADO-OU-ORGANIZADO", [])
         if livros:
             for livro in livros:
+                # Caso o livro seja uma string, não um dicionário
+                if isinstance(livro, str):
+                    livro = {"DADOS-BASICOS-DO-LIVRO": {"@TITULO-DO-LIVRO": livro}}
+
                 dados_basicos_livro = livro.get("DADOS-BASICOS-DO-LIVRO", {})
                 detalhamento_livro = livro.get("DETALHAMENTO-DO-LIVRO", {})
                 autores = livro.get("AUTORES", [])
@@ -370,7 +374,7 @@ def formatar_livros_e_capitulos(dados):
                 if autores:
                     print("Autores:")
                     for autor in autores:
-                        # Verificar se o autor é um dicionário antes de tentar usar get()
+                        # Verificar se o autor é uma string ou um dicionário
                         if isinstance(autor, dict):
                             nome_autor = autor.get(
                                 "@NOME-COMPLETO-DO-AUTOR", ""
@@ -385,15 +389,29 @@ def formatar_livros_e_capitulos(dados):
         capitulos = livros_e_capitulos.get("CAPITULO-DE-LIVRO-PUBLICADO", [])
         if capitulos:
             for capitulo in capitulos:
+                # Verificar se capitulo é uma string e transformá-lo em dicionário
+                if isinstance(capitulo, str):
+                    capitulo = {
+                        "DADOS-BASICOS-DO-CAPITULO": {
+                            "@TITULO-DO-CAPITULO-DO-LIVRO": capitulo
+                        }
+                    }
+
                 dados_basicos_capitulo = capitulo.get("DADOS-BASICOS-DO-CAPITULO", {})
-                print(dados_basicos_capitulo)
                 detalhamento_capitulo = capitulo.get("DETALHAMENTO-DO-CAPITULO", {})
                 autores = capitulo.get("AUTORES", [])
 
-                # Extraindo informações básicas do capítulo
-                titulo_capitulo = dados_basicos_capitulo.get(
-                    "@TITULO-DO-CAPITULO-DO-LIVRO", ""
-                ).strip()
+                # Verificar se dados_basicos_capitulo é um dicionário e não uma string
+                if isinstance(dados_basicos_capitulo, dict):
+                    # Extraindo informações básicas do capítulo
+                    titulo_capitulo = dados_basicos_capitulo.get(
+                        "@TITULO-DO-CAPITULO-DO-LIVRO", ""
+                    ).strip()
+                    if titulo_capitulo == "@SEQUENCIA-PRODUCAO":
+                        titulo_capitulo = "Título do Capítulo não disponível"  # Substitui por valor informativo
+                else:
+                    titulo_capitulo = "Título do Capítulo não disponível"
+
                 ano = dados_basicos_capitulo.get("@ANO", "").strip()
                 idioma = dados_basicos_capitulo.get("@IDIOMA", "").strip()
                 doi = dados_basicos_capitulo.get("@DOI", "").strip()
@@ -418,7 +436,7 @@ def formatar_livros_e_capitulos(dados):
                 if autores:
                     print("Autores:")
                     for autor in autores:
-                        # Verificar se o autor é um dicionário antes de tentar usar get()
+                        # Verificar se o autor é uma string ou um dicionário
                         if isinstance(autor, dict):
                             nome_autor = autor.get(
                                 "@NOME-COMPLETO-DO-AUTOR", ""
@@ -489,3 +507,8 @@ if resultados_busca:
         print("\n" + "-" * 50 + "\n")  # Linha de separação entre currículos
 else:
     print(f"Nenhum currículo encontrado com a palavra '{palavra_chave}'.")
+
+
+# Livros e capitulos é uma STR, aparentemente.
+# {'DADOS-BASICOS-DO-CAPITULO': {'@TITULO-DO-CAPITULO-DO-LIVRO': '@SEQUENCIA-PRODUCAO'}}
+# formatar o restante e partir pra GUI

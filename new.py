@@ -6,7 +6,6 @@ import xmltodict
 def extrair_informacoes(xml_file):
     with open(xml_file, "r") as f:
         data = xmltodict.parse(f.read())
-
     # Extraindo campos do XML
     nome = data["CURRICULO-VITAE"]["DADOS-GERAIS"]["@NOME-COMPLETO"]
     lattes_id = data["CURRICULO-VITAE"]["@NUMERO-IDENTIFICADOR"]
@@ -47,7 +46,7 @@ def extrair_informacoes(xml_file):
         "ARTIGO-PUBLICADO", []
     )
     livros_capitulos = producao_bibliografica.get("LIVROS-E-CAPITULOS", {}).get(
-        "LIVRO-PUBLICADO-OU-ORGANIZADO", []
+        "CAPITULOS-DE-LIVROS-PUBLICADOS", []
     )
 
     return {
@@ -85,31 +84,47 @@ def buscar_por_palavra(dados_curriculos, palavra):
     return resultados
 
 
-# Função para formatar o texto com base nas chaves selecionadas, separando grandes tópicos
-def formatar_saida(dados, chaves_selecionadas):
+# Função para remover valores nulos e caracteres indesejados do dicionário
+def limpar_dados(dados):
     if isinstance(dados, dict):
-        for key, value in dados.items():
-            key_sem_prefixo = key.replace("@", "").replace("-", " ").upper()
+        return {
+            k.replace("@", "").replace("-", " ").upper(): limpar_dados(v)
+            for k, v in dados.items()
+            if v
+        }
+    elif isinstance(dados, list):
+        return [limpar_dados(item) for item in dados if item]
+    return dados
 
+
+# Função para formatar a saída de dados gerais
+def formatar_saida(dados, chaves_selecionadas):
+    dados_limpos = limpar_dados(dados)  # Limpa os dados antes de formatar
+    if isinstance(dados_limpos, dict):
+        for key, value in dados_limpos.items():
             # Exibe apenas se a chave estiver na lista de chaves selecionadas
-            if key_sem_prefixo in chaves_selecionadas:
+            if key in chaves_selecionadas:
+                print(f"--- {key.replace('_', ' ').title()} ---")  # Título da seção
                 if isinstance(value, dict):
-                    print(f"{key_sem_prefixo}:")
                     formatar_saida(value, chaves_selecionadas)
                 elif isinstance(value, list):
-                    print(f"{key_sem_prefixo}:")
-                    for item in value:
-                        formatar_saida(item, chaves_selecionadas)
-                elif value:  # Exibe apenas se o valor não for nulo
-                    print(f"{key_sem_prefixo}: {value}")
+                    if value:  # Certifique-se de que a lista não está vazia
+                        for item in value:
+                            # Formatar cada item da lista com detalhes
+                            if isinstance(item, dict):
+                                for subkey, subvalue in item.items():
+                                    print(
+                                        f"{subkey.replace('_', ' ').title()}: {subvalue}"
+                                    )
+                            else:
+                                print(f"{item}")
+                    else:
+                        print("Nenhum item disponível.")  # Indica listas vazias
+                else:  # Exibe apenas se o valor não for nulo
+                    print(value)
 
-                # Adiciona uma linha em branco apenas entre grandes seções
-                if key_sem_prefixo in [
-                    "TEXTO RESUMO CV RH",
-                    "FORMACAO ACADEMICA",
-                    "PRODUCAO BIBLIOGRAFICA",
-                ]:
-                    print("\n")
+                # Adiciona uma linha em branco após cada seção
+                print("\n")  # Adiciona uma nova linha para melhor espaçamento
 
 
 # Lista de chaves que queremos exibir
@@ -117,24 +132,11 @@ chaves_selecionadas = {
     "NOME COMPLETO",
     "NUMERO IDENTIFICADOR",
     "TEXTO RESUMO CV RH",
-    "FORMACAO ACADEMICA",
-    "NOME INSTITUICAO",
-    "ANO DE INICIO",
-    "ANO DE CONCLUSAO",
-    "TITULO DO TRABALHO DE CONCLUSAO DE CURSO",
-    "NOME DO ORIENTADOR",
-    "NOME CURSO",
-    "STATUS DO CURSO",
     "PRODUCAO BIBLIOGRAFICA",
-    "TRABALHOS EM EVENTOS",
-    "TITULO DO TRABALHO",
-    "ANO DO TRABALHO",
-    "ARTIGOS PUBLICADOS",
-    "TITULO DO ARTIGO",
-    "ANO DO ARTIGO",
+    # "TRABALHOS EM EVENTOS",
+    # "ARTIGOS PUBLICADOS",
     "LIVROS E CAPITULOS",
 }
-
 
 # Diretório onde os arquivos XML estão localizados
 diretorio = "C:\\Users\\henrc\\Desktop\\Proj_Mat"
@@ -144,12 +146,10 @@ palavra_chave = input("Busca: ")
 
 # Realizar a busca
 resultados_busca = buscar_por_palavra(dados_curriculos, palavra_chave)
-
-# Exibir resultados da pesquisa formatados
 if resultados_busca:
     print(f"\nCurrículos que contêm a palavra '{palavra_chave}':\n")
     for curriculo in resultados_busca:
-        formatar_saida(curriculo, chaves_selecionadas)
-        print("\n" + "-" * 50 + "\n")  # Linha de separação entre currículos
+        print(curriculo)
+
 else:
     print(f"Nenhum currículo encontrado com a palavra '{palavra_chave}'.")
