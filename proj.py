@@ -47,7 +47,7 @@ def extrair_informacoes(xml_file):
         "ARTIGO-PUBLICADO", []
     )
     livros_capitulos = producao_bibliografica.get("LIVROS-E-CAPITULOS", {}).get(
-        "LIVRO-PUBLICADO-OU-ORGANIZADO", []
+        "CAPITULOS-DE-LIVROS-PUBLICADOS", []
     )
 
     return {
@@ -245,6 +245,209 @@ def formatar_trabalhos_em_eventos(dados):
             print("\n")  # Linha em branco para separar os trabalhos
 
 
+def formatar_artigos_publicados(dados):
+    # Acesso à produção bibliográfica
+    producao_bibliografica = dados.get("PRODUCAO-BIBLIOGRAFICA", {})
+
+    artigos_publicados = producao_bibliografica.get("ARTIGOS PUBLICADOS", [])
+
+    # Verificar se há artigos publicados
+    if artigos_publicados:
+        print(f"--- Artigos Publicados ---")
+
+        for artigo in artigos_publicados:
+            dados_basicos_artigo = artigo.get("DADOS-BASICOS-DO-ARTIGO", {})
+            detalhamento_artigo = artigo.get("DETALHAMENTO-DO-ARTIGO", {})
+            autores = artigo.get("AUTORES", [])
+            palavras_chave = artigo.get("PALAVRAS-CHAVE", {})
+
+            # Extraindo informações básicas
+            titulo_artigo = dados_basicos_artigo.get("@TITULO-DO-ARTIGO", "").strip()
+            ano_artigo = dados_basicos_artigo.get("@ANO-DO-ARTIGO", "").strip()
+            pais_publicacao = dados_basicos_artigo.get(
+                "@PAIS-DE-PUBLICACAO", ""
+            ).strip()
+            idioma_artigo = dados_basicos_artigo.get("@IDIOMA", "").strip()
+            meio_divulgacao = dados_basicos_artigo.get(
+                "@MEIO-DE-DIVULGACAO", ""
+            ).strip()
+            doi = dados_basicos_artigo.get("@DOI", "").strip()
+
+            # Detalhes do artigo
+            nome_periodico = detalhamento_artigo.get(
+                "@TITULO-DO-PERIODICO-OU-REVISTA", ""
+            ).strip()
+            issn = detalhamento_artigo.get("@ISSN", "").strip()
+            volume = detalhamento_artigo.get("@VOLUME", "").strip()
+            fasciculo = detalhamento_artigo.get("@FASCICULO", "").strip()
+            serie = detalhamento_artigo.get("@SERIE", "").strip()
+            pagina_inicial = detalhamento_artigo.get("@PAGINA-INICIAL", "").strip()
+            pagina_final = detalhamento_artigo.get("@PAGINA-FINAL", "").strip()
+            local_publicacao = detalhamento_artigo.get(
+                "@LOCAL-DE-PUBLICACAO", ""
+            ).strip()
+
+            # Imprimindo as informações formatadas
+            print(f"Título do Artigo: {titulo_artigo or 'Não informado'}")
+            print(f"Ano do Artigo: {ano_artigo or 'Não informado'}")
+            print(f"País de Publicação: {pais_publicacao or 'Não informado'}")
+            print(f"Idioma: {idioma_artigo or 'Não informado'}")
+            print(f"Meio de Divulgação: {meio_divulgacao or 'Não informado'}")
+            print(f"DOI: {doi or 'Não informado'}")
+            print(f"Nome do Periódico/Revista: {nome_periodico or 'Não informado'}")
+            print(f"ISSN: {issn or 'Não informado'}")
+            print(f"Volume: {volume or 'Não informado'}")
+            print(f"Fascículo: {fasciculo or 'Não informado'}")
+            print(f"Série: {serie or 'Não informado'}")
+            print(
+                f"Páginas: {pagina_inicial or 'Não informado'} - {pagina_final or 'Não informado'}"
+            )
+            print(f"Local de Publicação: {local_publicacao or 'Não informado'}")
+
+            # Exibindo os autores
+            if autores:
+                print("Autores:")
+                for autor in autores:
+                    nome_autor = autor.get("@NOME-COMPLETO-DO-AUTOR", "").strip()
+                    nome_para_citacao = autor.get("@NOME-PARA-CITACAO", "").strip()
+                    print(
+                        f"{nome_autor or 'Não informado'} ({nome_para_citacao or 'Não informado'})"
+                    )
+
+            # Exibindo as palavras-chave
+            if palavras_chave:
+                palavras = [
+                    palavras_chave.get(f"@PALAVRA-CHAVE-{i}", "") for i in range(1, 7)
+                ]
+                print("Palavras-chave: ", ", ".join([p for p in palavras if p]))
+
+            print("\n")  # Linha em branco para separar os artigos
+
+
+def formatar_livros_e_capitulos(dados):
+    # Acesso à produção bibliográfica
+    producao_bibliografica = dados.get("PRODUCAO-BIBLIOGRAFICA", {})
+
+    livros_e_capitulos = producao_bibliografica.get("LIVROS E CAPITULOS", {})
+    print(livros_e_capitulos)
+    # Verificar se há livros ou capítulos
+    if livros_e_capitulos:
+        print(f"--- Livros e Capítulos ---")
+
+        # Processar Livros
+        livros = livros_e_capitulos.get("LIVRO-PUBLICADO-OU-ORGANIZADO", [])
+        if livros:
+            for livro in livros:
+                # Caso o livro seja uma string, não um dicionário
+                if isinstance(livro, str):
+                    livro = {"DADOS-BASICOS-DO-LIVRO": {"@TITULO-DO-LIVRO": livro}}
+
+                dados_basicos_livro = livro.get("DADOS-BASICOS-DO-LIVRO", {})
+                detalhamento_livro = livro.get("DETALHAMENTO-DO-LIVRO", {})
+                autores = livro.get("AUTORES", [])
+
+                # Extraindo informações básicas do livro
+                titulo_livro = dados_basicos_livro.get("@TITULO-DO-LIVRO", "").strip()
+                ano = dados_basicos_livro.get("@ANO", "").strip()
+                idioma = dados_basicos_livro.get("@IDIOMA", "").strip()
+                doi = dados_basicos_livro.get("@DOI", "").strip()
+
+                # Detalhes do livro
+                edicao = detalhamento_livro.get("@NUMERO-DA-EDICAO-REVISAO", "").strip()
+                volume = detalhamento_livro.get("@VOLUME", "").strip()
+                serie = detalhamento_livro.get("@SERIE", "").strip()
+                local_publicacao = detalhamento_livro.get("@CIDADE", "").strip()
+                editora = detalhamento_livro.get("@NOME-DA-EDITORA", "").strip()
+
+                # Imprimindo informações do livro
+                print(f"[LIVRO] {titulo_livro or 'Não informado'}")
+                print(f"Ano: {ano or 'Não informado'}")
+                print(f"Idioma: {idioma or 'Não informado'}")
+                print(f"DOI: {doi or 'Não informado'}")
+                print(f"Edição: {edicao or 'Não informado'}")
+                print(f"Volume: {volume or 'Não informado'}")
+                print(f"Série: {serie or 'Não informado'}")
+                print(f"Local de Publicação: {local_publicacao or 'Não informado'}")
+                print(f"Editora: {editora or 'Não informado'}")
+
+                # Exibindo autores
+                if autores:
+                    print("Autores:")
+                    for autor in autores:
+                        # Verificar se o autor é uma string ou um dicionário
+                        if isinstance(autor, dict):
+                            nome_autor = autor.get(
+                                "@NOME-COMPLETO-DO-AUTOR", ""
+                            ).strip()
+                        else:
+                            nome_autor = autor.strip()  # Caso o autor seja uma string
+                        print(f"- {nome_autor or 'Não informado'}")
+
+                print("\n")
+
+        # Processar Capítulos
+        capitulos = livros_e_capitulos.get("CAPITULO-DE-LIVRO-PUBLICADO", [])
+        if capitulos:
+            for capitulo in capitulos:
+                # Verificar se capitulo é uma string e transformá-lo em dicionário
+                if isinstance(capitulo, str):
+                    capitulo = {
+                        "DADOS-BASICOS-DO-CAPITULO": {
+                            "@TITULO-DO-CAPITULO-DO-LIVRO": capitulo
+                        }
+                    }
+
+                dados_basicos_capitulo = capitulo.get("DADOS-BASICOS-DO-CAPITULO", {})
+                detalhamento_capitulo = capitulo.get("DETALHAMENTO-DO-CAPITULO", {})
+                autores = capitulo.get("AUTORES", [])
+
+                # Verificar se dados_basicos_capitulo é um dicionário e não uma string
+                if isinstance(dados_basicos_capitulo, dict):
+                    # Extraindo informações básicas do capítulo
+                    titulo_capitulo = dados_basicos_capitulo.get(
+                        "@TITULO-DO-CAPITULO-DO-LIVRO", ""
+                    ).strip()
+                    if titulo_capitulo == "@SEQUENCIA-PRODUCAO":
+                        titulo_capitulo = "Título do Capítulo não disponível"  # Substitui por valor informativo
+                else:
+                    titulo_capitulo = "Título do Capítulo não disponível"
+
+                ano = dados_basicos_capitulo.get("@ANO", "").strip()
+                idioma = dados_basicos_capitulo.get("@IDIOMA", "").strip()
+                doi = dados_basicos_capitulo.get("@DOI", "").strip()
+
+                # Detalhes do capítulo
+                titulo_livro = detalhamento_capitulo.get("@TITULO-DO-LIVRO", "").strip()
+                organizadores = detalhamento_capitulo.get("@ORGANIZADORES", "").strip()
+                local_publicacao = detalhamento_capitulo.get("@CIDADE", "").strip()
+                editora = detalhamento_capitulo.get("@NOME-DA-EDITORA", "").strip()
+
+                # Imprimindo informações do capítulo
+                print(f"[CAPÍTULO] {titulo_capitulo or 'Não informado'}")
+                print(f"Ano: {ano or 'Não informado'}")
+                print(f"Idioma: {idioma or 'Não informado'}")
+                print(f"DOI: {doi or 'Não informado'}")
+                print(f"Publicado em: {titulo_livro or 'Não informado'}")
+                print(f"Organizadores: {organizadores or 'Não informado'}")
+                print(f"Local de Publicação: {local_publicacao or 'Não informado'}")
+                print(f"Editora: {editora or 'Não informado'}")
+
+                # Exibindo autores
+                if autores:
+                    print("Autores:")
+                    for autor in autores:
+                        # Verificar se o autor é uma string ou um dicionário
+                        if isinstance(autor, dict):
+                            nome_autor = autor.get(
+                                "@NOME-COMPLETO-DO-AUTOR", ""
+                            ).strip()
+                        else:
+                            nome_autor = autor.strip()  # Caso o autor seja uma string
+                        print(f"- {nome_autor or 'Não informado'}")
+
+                print("\n")
+
+
 # Função para formatar a saída de dados gerais
 def formatar_saida(dados, chaves_selecionadas):
     dados_limpos = limpar_dados(dados)  # Limpa os dados antes de formatar
@@ -280,10 +483,6 @@ chaves_selecionadas = {
     "NOME COMPLETO",
     "NUMERO IDENTIFICADOR",
     "TEXTO RESUMO CV RH",
-    # "PRODUCAO BIBLIOGRAFICA",
-    # "TRABALHOS EM EVENTOS",
-    # "ARTIGOS PUBLICADOS",
-    # "LIVROS E CAPITULOS",
 }
 
 
@@ -301,8 +500,15 @@ if resultados_busca:
     print(f"\nCurrículos que contêm a palavra '{palavra_chave}':\n")
     for curriculo in resultados_busca:
         formatar_saida(curriculo, chaves_selecionadas)
-        formatar_formacao_academica(curriculo)  # Adiciona a parte de formação acadêmica
-        formatar_trabalhos_em_eventos(curriculo)  # Adiciona a parte de eventos
+        # formatar_formacao_academica(curriculo)  # Adiciona a parte de formação
+        # formatar_trabalhos_em_eventos(curriculo)  # Adiciona a parte de eventos
+        # formatar_artigos_publicados(curriculo)  # Adiciona a parte de artigos
+        formatar_livros_e_capitulos(curriculo)  # Adiciona a parte de livros
         print("\n" + "-" * 50 + "\n")  # Linha de separação entre currículos
 else:
     print(f"Nenhum currículo encontrado com a palavra '{palavra_chave}'.")
+
+
+# Livros e capitulos é uma STR, aparentemente.
+# {'DADOS-BASICOS-DO-CAPITULO': {'@TITULO-DO-CAPITULO-DO-LIVRO': '@SEQUENCIA-PRODUCAO'}}
+# formatar o restante e partir pra GUI
